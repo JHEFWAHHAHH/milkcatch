@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гра: Лови молоко!</title>
+    <img src="photo_5337216985722908039_x.jpg" class="logo">
+    <style>
+        .logo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 8%;
+            height: 10%;
+        }
+
+        body {
+            text-align: center;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .cow, .milk, .sour-milk, .glass {
+            position: absolute;
+        }
+        .cow {
+            top: 10px;
+            width: 180px;
+            transition: transform 0.3s;
+        }
+        .milk, .sour-milk {
+            width: 40px;
+        }
+        .glass {
+            bottom: 30px;
+            width: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        #end-message, #restart-button {
+            display: none;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #end-message {
+            top: 50%;
+            font-size: 36px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #restart-button {
+            top: 60%;
+            font-size: 24px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <img src="photo_5337204156655596116_x.jpg" class="cow" id="cow">
+        <img src="photo_5337204156655596118_x.jpg" class="glass" id="glass">
+        <p id="score"><span>0</span></p>
+        <p id="end-message">Гра закінчена! Твій рахунок: <span id="final-score"></span></p>
+        <button id="restart-button" onclick="restartGame()">Заново</button>
+    </div>
+    
+    <audio id="drop-sound" src="knopka-jeskaya-blizkii-zvonkii.mp3"></audio>
+    <audio id="catch-sound" src="voda-kaplya-odinochnyiy-korotkiy-myagkiy-blizkiy.mp3"></audio>
+    <audio id="bad-sound" src="voda-kaplya-odinochnyiy-korotkiy-myagkiy-blizkiy.mp3"></audio>
+    <audio id="background-music" src="background-music.mp3" loop autoplay></audio>
+
+    <script>
+        const gameContainer = document.getElementById("game-container");
+        const glass = document.getElementById("glass");
+        const cow = document.getElementById("cow");
+        const scoreDisplay = document.querySelector("#score span");
+        const dropSound = document.getElementById("drop-sound");
+        const catchSound = document.getElementById("catch-sound");
+        const badSound = document.getElementById("bad-sound");
+        const backgroundMusic = document.getElementById("background-music");
+        let score = 0;
+        let cowDirection = 1;
+        let gameOver = false;
+
+        function moveGlass(direction) {
+            if (gameOver) return;
+            let left = parseInt(window.getComputedStyle(glass).getPropertyValue("left"));
+            let step = 30;
+            if (direction === "ArrowLeft") {
+                glass.style.left = Math.max(left - step, 0) + "px";
+            } else if (direction === "ArrowRight") {
+                glass.style.left = Math.min(left + step, window.innerWidth - 100) + "px";
+            }
+        }
+        document.addEventListener("keydown", (event) => { moveGlass(event.key); });
+
+        function moveCow() {
+            if (gameOver) return;
+            let left = parseInt(window.getComputedStyle(cow).getPropertyValue("left"));
+            if (left >= window.innerWidth - 180) {
+                cowDirection = -1;
+                cow.style.transform = "scaleX(-1)";
+            } else if (left <= 0) {
+                cowDirection = 1;
+                cow.style.transform = "scaleX(1)";
+            }
+            cow.style.left = left + cowDirection * 10 + "px";
+        }
+        setInterval(moveCow, 100);
+
+        function dropMilk() {
+            if (gameOver) return;
+            const milk = document.createElement("img");
+            milk.src = Math.random() > 0.2 ? "Whole-Raw-Milk-Gallon.jpg" : "Mint.webp";
+            milk.classList.add("milk");
+            milk.style.left = (parseInt(cow.style.left) + 70) + "px";
+            milk.style.top = "100px";
+            gameContainer.appendChild(milk);
+            dropSound.play();
+
+            let fallInterval = setInterval(() => {
+                let milkTop = parseInt(milk.style.top);
+                milk.style.top = milkTop + 5 + "px";
+                let milkRect = milk.getBoundingClientRect();
+                let glassRect = glass.getBoundingClientRect();
+                if (milkTop > window.innerHeight) {
+                    milk.remove();
+                    clearInterval(fallInterval);
+                } else if (milkRect.bottom >= glassRect.top && milkRect.left >= glassRect.left - 15 && milkRect.right <= glassRect.right + 15) {
+                    if (milk.src.includes("sour-milk")) {
+                        score = Math.max(0, score - 1);
+                        badSound.play();
+                    } else {
+                        score++;
+                        catchSound.play();
+                    }
+                    scoreDisplay.textContent = score;
+                    milk.remove();
+                    clearInterval(fallInterval);
+                }
+            }, 50);
+            setTimeout(dropMilk, Math.random() * 2000 + 500);
+        }
+        setTimeout(dropMilk, 1000);
+    </script>
+    <audio id="background-music" src="135472_1050391-lq.mp3" loop autoplay></audio>
+
+</body>
+</html>
